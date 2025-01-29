@@ -1,13 +1,7 @@
-# SE4IoT - SOFTWARE ENGINEERING FOR INTERNET OF THINGS  
-
-## SMART HOME AUTOMATED CONTROL AND MONITORING SYSTEM  
 
 
-### SUBMITTED BY:  
-**David Urban**  
-david.urban@student.univaq.it  
-**Kacper Pudelko**  
-kacperhenryk.pudelko@student.univaq.it  
+# SMART HOME AUTOMATED CONTROL AND MONITORING SYSTEM  
+
 ---
 sdadadasd docs file
 ---
