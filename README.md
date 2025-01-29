@@ -16,7 +16,7 @@ sdadadasd docs file
 ### Steps to Run the Project  
 1. **Clone the Repository**  
    ```sh  
-   git clone https://github.com/Twiggiermaen21/Smart-Home-Automated-Control-And-Monitoring-System-IoT.git  
+   git clone https://github.com/Twiggiermaen21/IOT_SHACAM.git
    ```  
 2. **Build and Start Services Using Docker**  
    ```sh  
@@ -29,12 +29,9 @@ sdadadasd docs file
    - **Node-RED UI**: [http://localhost:1880](http://localhost:1880)  
    - **InfluxDB Database**: [http://localhost:8086](http://localhost:8086)  
      - Username: `admin`, Password: `password`  
+ 
 
-4. **Simulate Additional Sensors in Wokwi**  
-   - Modify `MQTT_CLIENT_ID` in Wokwi simulation (e.g., change value to `'wokwi_sensor2'`).  
-   - Restart the Wokwi simulation to observe different sensor inputs.  
-
-5. **Shutdown Services**  
+4. **Shutdown Services**  
    ```sh  
    docker compose down  
    ```  
@@ -42,21 +39,14 @@ sdadadasd docs file
 ---
 
 ## Technologies Used  
-- **IoT Sensors**: Monitor home environment for automation.  
+- **IoT Sensors**: Utilize Python scripts to simulate smart home sensor behavior and data generation.  
 - **MQTT Protocol**: Enables seamless communication between devices.  
 - **Docker & Docker Compose**: Simplifies deployment and scalability.  
 - **Grafana**: Provides real-time data visualization.  
 - **InfluxDB**: Stores time-series data for analysis.  
 - **Node-RED**: Manages automation workflows.  
 
----
 
-## Future Enhancements  
-- **AI-based Automation**: Improve system intelligence with machine learning.  
-- **Mobile App Integration**: Extend control and notifications to mobile devices.  
-- **Voice Control Support**: Enable smart assistant compatibility.  
-
-For more details, refer to the project report available in the `./report` directory.  
 
 ---
 
@@ -66,5 +56,5 @@ For more details, refer to the project report available in the `./report` direct
 
 ---
 
-© 2025 Smart Home Automated Control and Monitoring System. All rights reserved.
+
 
