@@ -1,0 +1,18 @@
+0 verbose cli /usr/local/bin/node /usr/local/bin/npm
+1 info using npm@10.8.2
+2 info using node@v20.18.1
+3 silly config load:file:/usr/local/lib/node_modules/npm/npmrc
+4 silly config load:file:/data/.npmrc
+5 silly config load:file:/usr/src/node-red/.npmrc
+6 silly config load:file:/usr/local/etc/npmrc
+7 verbose title npm install @wz2b/node-red-influxdb-line-protocol@0.2.0
+8 verbose argv "install" "--no-audit" "--no-update-notifier" "--no-fund" "--save" "--save-prefix" "~" "--omit" "dev" "--engine-strict" "@wz2b/node-red-influxdb-line-protocol@0.2.0"
+9 verbose logfile logs-max:10 dir:/data/.npm/_logs/2025-01-29T17_38_10_777Z-
+10 verbose logfile /data/.npm/_logs/2025-01-29T17_38_10_777Z-debug-0.log
+11 silly packumentCache heap:2106327040 maxSize:526581760 maxEntrySize:263290880
+12 silly logfile done cleaning log files
+13 silly idealTree buildDeps
+14 silly fetch manifest @wz2b/node-red-influxdb-line-protocol@0.2.0
+15 silly packumentCache full:https://registry.npmjs.org/@wz2b%2fnode-red-influxdb-line-protocol cache-miss
+16 http fetch GET https://registry.npmjs.org/@wz2b%2fnode-red-influxdb-line-protocol attempt 1 failed with ETIMEDOUT
+17 http fetch GET https://registry.npmjs.org/@wz2b%2fnode-red-influxdb-line-protocol attempt 2 failed with ETIMEDOUT

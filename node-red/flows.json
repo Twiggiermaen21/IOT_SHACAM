@@ -1,0 +1,728 @@
+[
+    {
+        "id": "f6f2187d.f17ca8",
+        "type": "tab",
+        "label": "Flow 1",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "mqtt-topic-filter",
+        "type": "subflow",
+        "name": "topic filter",
+        "info": "## MQTT Topic filter\n\n### Description\nFilters messages based on the value of `msg.topic` using standard MQTT topic filter notation.\n* `#` match all\n* `+` match one level\n\n### example filters\n* `home/+/temperature` \n  * will match `home/bedroom/temperature`\n  * will match `home/livingroom/temperature`\n  * will not match `home/room/1/temperature`\n  * will not match `room/1/temperature`\n* `home/#` \n  * will match `home/location`\n  * will match `home/livingroom/temperature`\n  * will match `home/livingroom/humidity`\n  * will not match `room/1/temperature`\n\n\n### Outputs\n\n#### Output 1 - match\nMessages with a topic that matches the `topic filter` will be sent out this output.\n\n#### Output 2 - no match\nMessages with a topic that does not match the `topic filter` will be sent out this output to permit next level filtering\n",
+        "category": "function",
+        "in": [
+            {
+                "x": 68,
+                "y": 80,
+                "wires": [
+                    {
+                        "id": "c7fc11c3.07902"
+                    }
+                ]
+            }
+        ],
+        "out": [
+            {
+                "x": 340,
+                "y": 48,
+                "wires": [
+                    {
+                        "id": "c7fc11c3.07902",
+                        "port": 0
+                    }
+                ]
+            },
+            {
+                "x": 340,
+                "y": 96,
+                "wires": [
+                    {
+                        "id": "c7fc11c3.07902",
+                        "port": 1
+                    }
+                ]
+            }
+        ],
+        "env": [
+            {
+                "name": "filter",
+                "type": "str",
+                "value": "",
+                "ui": {
+                    "label": {
+                        "en-US": "Topic filter"
+                    },
+                    "type": "input",
+                    "opts": {
+                        "types": [
+                            "str"
+                        ]
+                    }
+                }
+            },
+            {
+                "name": "status",
+                "type": "bool",
+                "value": "true",
+                "ui": {
+                    "label": {
+                        "en-US": "Show topic"
+                    },
+                    "type": "input",
+                    "opts": {
+                        "types": [
+                            "bool"
+                        ]
+                    }
+                }
+            }
+        ],
+        "meta": {
+            "type": "mqtt-topic-filter",
+            "version": "1.0.0",
+            "author": "steve-mcl",
+            "desc": "A node to filter MQTT topics",
+            "keywords": "mqtt",
+            "license": "MIT"
+        },
+        "color": "#D8BFD8",
+        "outputLabels": [
+            "Match",
+            "No Match"
+        ],
+        "icon": "font-awesome/fa-filter",
+        "status": {
+            "x": 548,
+            "y": 160,
+            "wires": [
+                {
+                    "id": "519579c5.dfaec8",
+                    "port": 0
+                },
+                {
+                    "id": "4ce4687e.e359a8",
+                    "port": 0
+                }
+            ]
+        }
+    },
+    {
+        "id": "2674cf2203fcd70b",
+        "type": "mqtt-broker",
+        "name": "",
+        "broker": "172.16.0.1",
+        "port": 1883,
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": 4,
+        "keepalive": 60,
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthRetain": "false",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closeRetain": "false",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willRetain": "false",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "e8edfc4a1e971b41",
+        "type": "influxdb",
+        "hostname": "127.0.0.1",
+        "port": 8086,
+        "protocol": "http",
+        "database": "database",
+        "name": "",
+        "usetls": false,
+        "tls": "",
+        "influxdbVersion": "2.0",
+        "url": "http://SHACAM-influxdb:8086",
+        "timeout": 10,
+        "rejectUnauthorized": true
+    },
+    {
+        "id": "c7fc11c3.07902",
+        "type": "function",
+        "z": "mqtt-topic-filter",
+        "name": "filter",
+        "func": "var a = msg.topic;\nvar b = env.get(\"filter\") || '#';\n\nif(a===b) { return [msg, null]; }\nif(b==='#') { \n    if(a) return [msg, null]; //if topic is something, OK\n    return [null, msg];//otherwise, fail!\n}\nvar nameSegments = a.split('/');\nvar filterSegments = b.split('/');\nfor (var i = 0; i < filterSegments.length; i++) {\n    var topicSegment = nameSegments[i];\n    var patternSegment = filterSegments[i];\n    var match = false;\n    if(topicSegment === patternSegment) { match = true; }\n    if(patternSegment === '+') { match = true; }\n    if(patternSegment === '#') {  return [msg, null]; }\n    if(match === false) { return [null, msg]; }\n}\nif(nameSegments.length !== filterSegments.length) { return [null, msg]; }\n\nreturn [msg, null];\n",
+        "outputs": 2,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "x": 192,
+        "y": 80,
+        "wires": [
+            [],
+            []
+        ]
+    },
+    {
+        "id": "c52c30b1.8341",
+        "type": "inject",
+        "z": "mqtt-topic-filter",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 148,
+        "y": 160,
+        "wires": [
+            [
+                "45ee843e.ec4bbc"
+            ]
+        ]
+    },
+    {
+        "id": "519579c5.dfaec8",
+        "type": "function",
+        "z": "mqtt-topic-filter",
+        "name": "",
+        "func": "var b = env.get(\"filter\") || '#';\nnode.status({text:b})\nmsg.payload = b;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "x": 428,
+        "y": 144,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "45ee843e.ec4bbc",
+        "type": "switch",
+        "z": "mqtt-topic-filter",
+        "name": "",
+        "property": "status",
+        "propertyType": "env",
+        "rules": [
+            {
+                "t": "true"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 290,
+        "y": 160,
+        "wires": [
+            [
+                "519579c5.dfaec8"
+            ],
+            [
+                "4ce4687e.e359a8"
+            ]
+        ]
+    },
+    {
+        "id": "4ce4687e.e359a8",
+        "type": "function",
+        "z": "mqtt-topic-filter",
+        "name": "",
+        "func": "node.status({})\ndelete msg.payload;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "x": 428,
+        "y": 192,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "3cc11d24.ff01a2",
+        "type": "comment",
+        "z": "f6f2187d.f17ca8",
+        "name": "WARNING: please check you have started this container with a volume that is mounted to /data\\n otherwise any flow changes are lost when you redeploy or upgrade the container\\n (e.g. upgrade to a more recent node-red docker image).\\n  If you are using named volumes you can ignore this warning.\\n Double click or see info side panel to learn how to start Node-RED in Docker to save your work",
+        "info": "\nTo start docker with a bind mount volume (-v option), for example:\n\n```\ndocker run -it -p 1880:1880 -v /home/user/node_red_data:/data --name mynodered nodered/node-red\n```\n\nwhere `/home/user/node_red_data` is a directory on your host machine where you want to store your flows.\n\nIf you do not do this then you can experiment and redploy flows, but if you restart or upgrade the container the flows will be disconnected and lost. \n\nThey will still exist in a hidden data volume, which can be recovered using standard docker techniques, but that is much more complex than just starting with a named volume as described above.",
+        "x": 350,
+        "y": 80,
+        "wires": []
+    },
+    {
+        "id": "462c5418f6c3fb5e",
+        "type": "mqtt in",
+        "z": "f6f2187d.f17ca8",
+        "name": "",
+        "topic": "/smart_home/#",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "2674cf2203fcd70b",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 300,
+        "y": 520,
+        "wires": [
+            [
+                "4c95739dd8f7d03f",
+                "8bad9715b2e4e264",
+                "1b3eec2b836eb615",
+                "946d915877321909",
+                "26bc5751d153b239",
+                "23d9f557a00f51bf",
+                "eed07ad0304a42f3",
+                "197f24b2b5815d53",
+                "baaed5136a5be1e4",
+                "4b38b8595ea6d398",
+                "db30582b629229b8"
+            ]
+        ]
+    },
+    {
+        "id": "db2ed632760af33b",
+        "type": "influxdb out",
+        "z": "f6f2187d.f17ca8",
+        "influxdb": "e8edfc4a1e971b41",
+        "name": " IOT_SHACAM_BATHROOM",
+        "measurement": "IOT_SHACAM_BATHROOM",
+        "precision": "",
+        "retentionPolicy": "",
+        "database": "database",
+        "precisionV18FluxV20": "ms",
+        "retentionPolicyV18Flux": "",
+        "org": "IOT_SHACAM",
+        "bucket": "IOT_SHACAM",
+        "x": 980,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "4c95739dd8f7d03f",
+        "type": "subflow:mqtt-topic-filter",
+        "z": "f6f2187d.f17ca8",
+        "name": "",
+        "env": [
+            {
+                "name": "filter",
+                "value": "/smart_home/bathroom/#",
+                "type": "str"
+            }
+        ],
+        "x": 720,
+        "y": 360,
+        "wires": [
+            [
+                "db2ed632760af33b"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "946d915877321909",
+        "type": "subflow:mqtt-topic-filter",
+        "z": "f6f2187d.f17ca8",
+        "name": "",
+        "env": [
+            {
+                "name": "filter",
+                "value": "/smart_home/kitchen/#",
+                "type": "str"
+            }
+        ],
+        "x": 720,
+        "y": 740,
+        "wires": [
+            [
+                "bca6c828530ed3fc"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "b73a70516356463a",
+        "type": "influxdb out",
+        "z": "f6f2187d.f17ca8",
+        "influxdb": "e8edfc4a1e971b41",
+        "name": "IOT_SHACAM_BEDROOM",
+        "measurement": "IOT_SHACAM_BEDROOM",
+        "precision": "",
+        "retentionPolicy": "",
+        "database": "database",
+        "precisionV18FluxV20": "ms",
+        "retentionPolicyV18Flux": "",
+        "org": "IOT_SHACAM",
+        "bucket": "IOT_SHACAM",
+        "x": 980,
+        "y": 500,
+        "wires": []
+    },
+    {
+        "id": "cdafca5b859b5b82",
+        "type": "influxdb out",
+        "z": "f6f2187d.f17ca8",
+        "influxdb": "e8edfc4a1e971b41",
+        "name": "IOT_SHACAM_LIVINGROOM",
+        "measurement": "IOT_SHACAM_LIVINGROOM",
+        "precision": "",
+        "retentionPolicy": "",
+        "database": "database",
+        "precisionV18FluxV20": "ms",
+        "retentionPolicyV18Flux": "",
+        "org": "IOT_SHACAM",
+        "bucket": "IOT_SHACAM",
+        "x": 1010,
+        "y": 620,
+        "wires": []
+    },
+    {
+        "id": "d0d57194852f00d6",
+        "type": "influxdb out",
+        "z": "f6f2187d.f17ca8",
+        "influxdb": "e8edfc4a1e971b41",
+        "name": "IOT_SHACAM_OUTSIDE",
+        "measurement": "IOT_SHACAM_OUTSIDE",
+        "precision": "",
+        "retentionPolicy": "",
+        "database": "database",
+        "precisionV18FluxV20": "ms",
+        "retentionPolicyV18Flux": "",
+        "org": "IOT_SHACAM",
+        "bucket": "IOT_SHACAM",
+        "x": 990,
+        "y": 860,
+        "wires": []
+    },
+    {
+        "id": "bca6c828530ed3fc",
+        "type": "influxdb out",
+        "z": "f6f2187d.f17ca8",
+        "influxdb": "e8edfc4a1e971b41",
+        "name": "IOT_SHACAM_KITCHEN",
+        "measurement": "IOT_SHACAM_KITCHEN",
+        "precision": "",
+        "retentionPolicy": "",
+        "database": "database",
+        "precisionV18FluxV20": "ms",
+        "retentionPolicyV18Flux": "",
+        "org": "IOT_SHACAM",
+        "bucket": "IOT_SHACAM",
+        "x": 990,
+        "y": 740,
+        "wires": []
+    },
+    {
+        "id": "1b3eec2b836eb615",
+        "type": "subflow:mqtt-topic-filter",
+        "z": "f6f2187d.f17ca8",
+        "name": "",
+        "env": [
+            {
+                "name": "filter",
+                "value": "/smart_home/livingroom/#",
+                "type": "str"
+            }
+        ],
+        "x": 700,
+        "y": 620,
+        "wires": [
+            [
+                "cdafca5b859b5b82"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "8bad9715b2e4e264",
+        "type": "subflow:mqtt-topic-filter",
+        "z": "f6f2187d.f17ca8",
+        "name": "",
+        "env": [
+            {
+                "name": "filter",
+                "value": "/smart_home/bedroom/#",
+                "type": "str"
+            }
+        ],
+        "x": 720,
+        "y": 500,
+        "wires": [
+            [
+                "b73a70516356463a"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "26bc5751d153b239",
+        "type": "subflow:mqtt-topic-filter",
+        "z": "f6f2187d.f17ca8",
+        "name": "",
+        "env": [
+            {
+                "name": "filter",
+                "value": "/smart_home/outside/#",
+                "type": "str"
+            }
+        ],
+        "x": 760,
+        "y": 860,
+        "wires": [
+            [
+                "d0d57194852f00d6"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "8f95761b134c8cc0",
+        "type": "influxdb out",
+        "z": "f6f2187d.f17ca8",
+        "influxdb": "e8edfc4a1e971b41",
+        "name": "IOT_SHACAM_ALERTS",
+        "measurement": "ALERTS",
+        "precision": "",
+        "retentionPolicy": "",
+        "database": "database",
+        "precisionV18FluxV20": "ms",
+        "retentionPolicyV18Flux": "",
+        "org": "IOT_SHACAM",
+        "bucket": "IOT_SHACAM_ALERTS",
+        "x": 990,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "23d9f557a00f51bf",
+        "type": "function",
+        "z": "f6f2187d.f17ca8",
+        "name": "function bathroom",
+        "func": "// Odczytujemy dane z sensorów\nvar ts = msg.payload.temperature_sensor_ID25 !== undefined ? msg.payload.temperature_sensor_ID25 : flow.get('lastTs');  // Temperatura\nvar hs = msg.payload.humidity_sensor_ID24 !== undefined ? msg.payload.humidity_sensor_ID24 : flow.get('lastHs');  // Wilgotność\nvar os = msg.payload.occupancy_sensor_ID23 !== undefined ? msg.payload.occupancy_sensor_ID23 : flow.get('lastOs');  // Obecność\nvar aqs = msg.payload.air_quality_sensor_ID26 !== undefined ? msg.payload.air_quality_sensor_ID26 : flow.get('lastAqs');  // Jakość powietrza\nvar sd = msg.payload.smoke_detector_ID27 !== undefined ? msg.payload.smoke_detector_ID27 : flow.get('lastSd');  // Detektor dymu\nvar ls = msg.payload.light_sensor_ID39 !== undefined ? msg.payload.light_sensor_ID39 : flow.get('lastLs');  // Natężenie światła\n\n// Inicjalizacja urządzeń\nvar floorHeater1 = 0;\nvar lightBulb5 = 0;\nvar lightBulb4 = 0;\nvar electricWindowBlinds2 = 0;\nvar electricWindowOpener2 = 0;\n\n// Resetujemy payload, aby zawierał tylko aktywowane urządzenia\nmsg.payload = {};\n\n// Sprawdzenie temperatury i włączenie ogrzewania podłogowego\nif (ts !== undefined) {  // Sprawdzamy, czy temperatura została dostarczona\n    if (ts < 15) {\n        floorHeater1 = 1;\n    }\n    msg.payload[\"Floor Heater (ID: 1)\"] = floorHeater1;\n    flow.set('lastTs', ts);  // Zapisujemy ostatnią temperaturę\n}\n\n// Sprawdzenie obecności i włączenie żarówek\nif (os !== undefined) {  // Sprawdzamy, czy obecność została dostarczona\n    if (os > 0 && ls < 500) {\n        lightBulb5 = 1;\n        lightBulb4 = 1;\n    }\n    msg.payload[\"Light bulb (ID: 5)\"] = lightBulb5;\n    msg.payload[\"Light bulb (ID: 4)\"] = lightBulb4;\n    flow.set('lastOs', os);  // Zapisujemy ostatnią obecność\n    flow.set('lastLs', ls);  // Zapisujemy ostatnie natężenie światła\n}\n\n// Sprawdzenie jakości powietrza i otwarcie okna\nif (aqs !== undefined) {  // Sprawdzamy, czy jakość powietrza została dostarczona\n    if (aqs > 50) {\n        electricWindowOpener2 = 1;\n        electricWindowBlinds2 = 0;  // Zamknięcie rolet\n    }\n    msg.payload[\"Electric window opener (ID: 2)\"] = electricWindowOpener2;\n    msg.payload[\"Electric window blinds (ID: 2)\"] = electricWindowBlinds2;\n\n    flow.set('lastAqs', aqs);  // Zapisujemy ostatnią jakość powietrza\n}\n\n\n\n// Sprawdzamy, czy payload zawiera jakieś aktywowane urządzenia\nif (Object.keys(msg.payload).length > 0) {\n    // Jeśli payload nie jest pusty, wysyłamy msg\n    return msg;\n}\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 750,
+        "y": 320,
+        "wires": [
+            [
+                "0cc1ed54e28ba1bc"
+            ]
+        ]
+    },
+    {
+        "id": "baaed5136a5be1e4",
+        "type": "function",
+        "z": "f6f2187d.f17ca8",
+        "name": "function bedroom",
+        "func": "// Odczytujemy dane z sensorów\nvar ts = msg.payload.temperature_sensor_ID19 !== undefined ? msg.payload.temperature_sensor_ID19 : flow.get('lastTs');  // Temperatura\nvar hs = msg.payload.humidity_sensor_ID18 !== undefined ? msg.payload.humidity_sensor_ID18 : flow.get('lastHs');  // Wilgotność\nvar os = msg.payload.occupancy_sensor_ID17 !== undefined ? msg.payload.occupancy_sensor_ID17 : flow.get('lastOs');  // Obecność\nvar aqs = msg.payload.air_quality_sensor_ID20 !== undefined ? msg.payload.air_quality_sensor_ID20 : flow.get('lastAqs');  // Jakość powietrza\nvar sd = msg.payload.smoke_detector_ID21 !== undefined ? msg.payload.smoke_detector_ID21 : flow.get('lastSd');  // Detektor dymu\nvar ls = msg.payload.light_sensor_ID39 !== undefined ? msg.payload.light_sensor_ID39 : flow.get('lastLs');  // Natężenie światła\n\n// Inicjalizacja urządzeń\nvar radiator1 = 0;\nvar radiator2 = 0;\nvar lightBulb1 = 0;\nvar lightBulb2 = 0;\nvar lightBulb3 = 0;\nvar electricWindowBlinds1 = 0;\nvar electricWindowOpener1 = 0;\nvar airConditioner1 = 0;\nvar dehumidifier1 = 0;\n\n// Resetujemy payload, aby zawierał tylko aktywowane urządzenia\nmsg.payload = {};\n\n// Sprawdzenie temperatury i włączenie ogrzewania podłogowego\nif (ts !== undefined) {  // Sprawdzamy, czy temperatura została dostarczona\n    if (ts < 15) {\n        radiator1 = 1;\n    }\n    msg.payload[\"Radiator (ID: 1)\"] = radiator1;\n    flow.set('lastTs', ts);  // Zapisujemy ostatnią temperaturę\n}\n\n// Sprawdzenie obecności i włączenie żarówek\nif (os !== undefined) {  // Sprawdzamy, czy obecność została dostarczona\n    if (os > 0 && ls < 500) {\n        lightBulb1 = 1;\n        lightBulb2 = 1;\n        lightBulb3 = 1;\n    }\n    msg.payload[\"Light bulb (ID: 1)\"] = lightBulb1;\n    msg.payload[\"Light bulb (ID: 2)\"] = lightBulb2;\n    msg.payload[\"Light bulb (ID: 3)\"] = lightBulb3;\n    flow.set('lastOs', os);  // Zapisujemy ostatnią obecność\n    flow.set('lastLs', ls);  // Zapisujemy ostatnie natężenie światła\n}\n\n// Sprawdzenie jakości powietrza i otwarcie okna\nif (aqs !== undefined) {  // Sprawdzamy, czy jakość powietrza została dostarczona\n    if (aqs > 50) {\n        electricWindowOpener1 = 1;\n        electricWindowBlinds1 = 0;  // Zamknięcie rolet\n    }\n    msg.payload[\"Electric window opener (ID: 1)\"] = electricWindowOpener1;\n    msg.payload[\"Electric window blinds (ID: 1)\"] = electricWindowBlinds1;\n\n    flow.set('lastAqs', aqs);  // Zapisujemy ostatnią jakość powietrza\n}\n\n// Sprawdzenie wilgotności i włączenie osuszacza powietrza\nif (hs !== undefined) {  // Sprawdzamy, czy wilgotność została dostarczona\n    if (hs > 60) {\n        dehumidifier1 = 1;\n    }\n    msg.payload[\"Dehumidifier (ID: 1)\"] = dehumidifier1;\n    flow.set('lastHs', hs);  // Zapisujemy ostatnią wilgotność\n}\n\n// Sprawdzenie temperatury i włączenie klimatyzacji\nif (ts !== undefined) {  // Sprawdzamy, czy temperatura została dostarczona\n    if (ts > 24) {\n        airConditioner1 = 1;\n    }\n    msg.payload[\"Air conditioner (ID: 1)\"] = airConditioner1;\n    flow.set('lastTs', ts);  // Zapisujemy ostatnią temperaturę\n}\n\n// Sprawdzamy, czy payload zawiera jakieś aktywowane urządzenia\nif (Object.keys(msg.payload).length > 0) {\n    // Jeśli payload nie jest pusty, wysyłamy msg\n    return msg;\n}\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 730,
+        "y": 460,
+        "wires": [
+            [
+                "1d04e375a9350651"
+            ]
+        ]
+    },
+    {
+        "id": "eed07ad0304a42f3",
+        "type": "function",
+        "z": "f6f2187d.f17ca8",
+        "name": "function kitchen",
+        "func": "// Odczytujemy dane z sensorów\nvar ts = msg.payload.temperature_sensor_ID3 !== undefined ? msg.payload.temperature_sensor_ID3 : flow.get('lastTs');  // Temperatura\nvar hs = msg.payload.humidity_sensor_ID2 !== undefined ? msg.payload.humidity_sensor_ID2 : flow.get('lastHs');  // Wilgotność\nvar os = msg.payload.occupancy_sensor_ID1 !== undefined ? msg.payload.occupancy_sensor_ID1 : flow.get('lastOs');  // Obecność\nvar aqs = msg.payload.air_quality_sensor_ID4 !== undefined ? msg.payload.air_quality_sensor_ID4 : flow.get('lastAqs');  // Jakość powietrza\nvar sd = msg.payload.smoke_detector_ID5 !== undefined ? msg.payload.smoke_detector_ID5 : flow.get('lastSd');  // Detektor dymu\nvar ls = msg.payload.light_sensor_ID39 !== undefined ? msg.payload.light_sensor_ID39 : flow.get('lastLs');  // Natężenie światła\n\nvar electricWindowBlinds6 = 0;\nvar electricWindowBlinds7 = 0;\nvar electricwindowopener6=0;\nvar electricwindowopener7 = 0;\nvar ledStrip6 = 0;\nvar lightBulb7 = 0;\nvar radiator2 = 0;\nvar lightBulb8 = 0;\n\n// Resetujemy payload, aby zawierał tylko aktywowane urządzenia\nmsg.payload = {};\n\n// Sprawdzenie temperatury i włączenie ogrzewania podłogowego\nif (ts !== undefined) {  // Sprawdzamy, czy temperatura została dostarczona\n    if (ts < 15) {\n        radiator2 = 1;\n    }\n    msg.payload[\"Radiator (ID: 2)\"] = radiator2;\n    flow.set('lastTs', ts);  // Zapisujemy ostatnią temperaturę\n}\n\n// Sprawdzenie obecności i natężenia światła do włączenia żarówek\nif (os !== undefined && ls !== undefined) {  // Sprawdzamy, czy obecność i natężenie światła zostały dostarczone\n    if (os > 0 && ls < 500) {\n        lightBulb7 = 1;\n        lightBulb8 = 1;\n        ledStrip6 = 1;\n    }\n    msg.payload[\"LED strip (ID: 6)\"] = ledStrip6;\n    msg.payload[\"Light bulb (ID: 7)\"] = lightBulb7;\n    msg.payload[\"Light bulb (ID: 8)\"] = lightBulb8;\n    flow.set('lastOs', os);  // Zapisujemy ostatnią obecność\n    flow.set('lastLs', ls);  // Zapisujemy ostatnie natężenie światła\n}\n\n// Sprawdzenie natężenia światła do włączenia rolet\nif (ls !== undefined) {  // Sprawdzamy, czy natężenie światła zostało dostarczone\n    if (ls < 400) {\n        electricWindowBlinds6 = 1;\n        electricWindowBlinds7 = 1;\n    }\n    msg.payload[\"Electric window blinds (ID: 6\"] = electricWindowBlinds6;\n    msg.payload[\"Electric window blinds (ID: 7)\"] = electricWindowBlinds7;\n\n    flow.set('lastLs', ls);  // Zapisujemy ostatnie natężenie światła\n}\n\n// Sprawdzenie jakości powietrza i otwarcie okna\nif (aqs !== undefined ) {  // Sprawdzamy, czy jakość powietrza została dostarczona\n    if (aqs > 50 ) {\n        electricwindowopener6 = 1;\n        electricwindowopener7 = 1;\n        electricWindowBlinds7 = 0;\n        electricWindowBlinds6 = 0;   // Zamknięcie rolet\n    }\n    msg.payload[\"Electric window blinds (ID: 6\"] = electricWindowBlinds6;\n    msg.payload[\"Electric window blinds (ID: 7)\"] = electricWindowBlinds7;\n    msg.payload[\"Electric window opener (ID: 7)\"] = electricwindowopener7;\n    msg.payload[\"Electric window opener (ID: 6)\"] = electricwindowopener6;\n    \n    \n    flow.set('lastAqs', aqs);  // Zapisujemy ostatnią jakość powietrza\n}\n\n// Sprawdzamy, czy payload zawiera jakieś aktywowane urządzenia\nif (Object.keys(msg.payload).length > 0) {\n    // Jeśli payload nie jest pusty, wysyłamy msg\n    return msg;\n} \n\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 740,
+        "y": 700,
+        "wires": [
+            [
+                "ee35dea322361818"
+            ]
+        ]
+    },
+    {
+        "id": "197f24b2b5815d53",
+        "type": "function",
+        "z": "f6f2187d.f17ca8",
+        "name": "function livingroom",
+        "func": "// Odczytujemy dane z sensorów\nvar ts = msg.payload.temperature_sensor_ID11 !== undefined ? msg.payload.temperature_sensor_ID11 : flow.get('lastTs');  // Temperatura\nvar hs = msg.payload.humidity_sensor_ID10 !== undefined ? msg.payload.humidity_sensor_ID10 : flow.get('lastHs');  // Wilgotność\nvar os = msg.payload.occupancy_sensor_ID9 !== undefined ? msg.payload.occupancy_sensor_ID9 : flow.get('lastOs');  // Obecność\nvar aqs = msg.payload.air_quality_sensor_ID12 !== undefined ? msg.payload.air_quality_sensor_ID12 : flow.get('lastAqs');  // Jakość powietrza\nvar sd = msg.payload.smoke_detector_ID13 !== undefined ? msg.payload.smoke_detector_ID13 : flow.get('lastSd');  // Detektor dymu\nvar ls = msg.payload.light_sensor_ID39 !== undefined ? msg.payload.light_sensor_ID39 : flow.get('lastLs');  // Natężenie światła\n\n// Inicjalizacja urządzeń\nvar radiator4 = 0;\nvar radiator3 = 0;\nvar lightBulb9 = 0;\nvar lightBulb12 = 0;\nvar lightBulb11 = 0;\nvar lightBulb10 = 0;\nvar electricWindowOpener5 = 0;\nvar electricWindowOpener4 = 0;\nvar electricWindowBlinds3 = 0;\nvar electricWindowBlinds5 = 0;\nvar electricWindowOpener3 = 0;\nvar electricWindowBlinds4 = 0;\nvar dehumidifier2 = 0;\nvar airConditioner2 = 0;\n\n// Resetujemy payload, aby zawierał tylko aktywowane urządzenia\nmsg.payload = {};\n\n// Sprawdzenie temperatury i włączenie ogrzewania podłogowego\nif (ts !== undefined) {  // Sprawdzamy, czy temperatura została dostarczona\n    if (ts < 15) {\n        radiator4 = 1;\n    }\n    msg.payload[\"Radiator (ID: 4)\"] = radiator4;\n    flow.set('lastTs', ts);  // Zapisujemy ostatnią temperaturę\n}\n\n// Sprawdzenie obecności i włączenie żarówek\nif (os !== undefined) {  // Sprawdzamy, czy obecność została dostarczona\n    if (os > 0 && ls < 500) {\n        lightBulb9 = 1;\n        lightBulb12 = 1;\n        lightBulb11 = 1;\n        lightBulb10 = 1;\n    }\n    msg.payload[\"Light bulb (ID: 9)\"] = lightBulb9;\n    msg.payload[\"Light bulb (ID: 12)\"] = lightBulb12;\n    msg.payload[\"Light bulb (ID: 11)\"] = lightBulb11;\n    msg.payload[\"Light bulb (ID: 10)\"] = lightBulb10;\n    flow.set('lastOs', os);  // Zapisujemy ostatnią obecność\n    flow.set('lastLs', ls);  // Zapisujemy ostatnie natężenie światła\n\n}\n\n// Sprawdzenie jakości powietrza i otwarcie okien\nif (aqs !== undefined) {  // Sprawdzamy, czy jakość powietrza została dostarczona\n    if (aqs > 50) {\n        electricWindowOpener5 = 1;\n        electricWindowOpener4 = 1;\n        electricWindowBlinds5 = 0;\n        electricWindowBlinds3 = 0;  // Zamknięcie rolet\n    }\n    msg.payload[\"Electric window opener (ID: 5)\"] = electricWindowOpener5;\n    msg.payload[\"Electric window opener (ID: 4)\"] = electricWindowOpener4;\n    msg.payload[\"Electric window blinds (ID: 5)\"] = electricWindowBlinds5;\n    msg.payload[\"Electric window blinds (ID: 3)\"] = electricWindowBlinds3;\n\n    flow.set('lastAqs', aqs);  // Zapisujemy ostatnią jakość powietrza\n}\n\n\n// Sprawdzenie wilgotności i włączenie osuszacza powietrza\nif (hs !== undefined) {  // Sprawdzamy, czy wilgotność została dostarczona\n    if (hs > 60) {\n        dehumidifier2 = 1;\n    }\n    msg.payload[\"Dehumidifier (ID: 2)\"] = dehumidifier2;\n    flow.set('lastHs', hs);  // Zapisujemy ostatnią wilgotność\n}\n\n// Sprawdzenie temperatury i włączenie klimatyzacji\nif (ts !== undefined) {  // Sprawdzamy, czy temperatura została dostarczona\n    if (ts > 24) {\n        airConditioner2 = 1;\n    }\n    msg.payload[\"Air conditioner (ID: 2)\"] = airConditioner2;\n    flow.set('lastTs', ts);  // Zapisujemy ostatnią temperaturę\n}\n\n// Sprawdzamy, czy payload zawiera jakieś aktywowane urządzenia\nif (Object.keys(msg.payload).length > 0) {\n    // Jeśli payload nie jest pusty, wysyłamy msg\n    return msg;\n}\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 730,
+        "y": 580,
+        "wires": [
+            [
+                "fdcf0417ddcc106e"
+            ]
+        ]
+    },
+    {
+        "id": "0cc1ed54e28ba1bc",
+        "type": "influxdb out",
+        "z": "f6f2187d.f17ca8",
+        "influxdb": "e8edfc4a1e971b41",
+        "name": "BATHROOM_COMPONENTS",
+        "measurement": "BATHROOM",
+        "precision": "",
+        "retentionPolicy": "",
+        "database": "database",
+        "precisionV18FluxV20": "ms",
+        "retentionPolicyV18Flux": "",
+        "org": "IOT_SHACAM",
+        "bucket": "IOT_SHACAM_COMPONENTS",
+        "x": 990,
+        "y": 320,
+        "wires": []
+    },
+    {
+        "id": "1d04e375a9350651",
+        "type": "influxdb out",
+        "z": "f6f2187d.f17ca8",
+        "influxdb": "e8edfc4a1e971b41",
+        "name": "BEDROOM_COMPONENTS",
+        "measurement": "BEDROOM",
+        "precision": "",
+        "retentionPolicy": "",
+        "database": "database",
+        "precisionV18FluxV20": "ms",
+        "retentionPolicyV18Flux": "",
+        "org": "IOT_SHACAM",
+        "bucket": "IOT_SHACAM_COMPONENTS",
+        "x": 980,
+        "y": 460,
+        "wires": []
+    },
+    {
+        "id": "fdcf0417ddcc106e",
+        "type": "influxdb out",
+        "z": "f6f2187d.f17ca8",
+        "influxdb": "e8edfc4a1e971b41",
+        "name": "LIVINGROOM_COMPONENTS",
+        "measurement": "LIVINGROOM",
+        "precision": "",
+        "retentionPolicy": "",
+        "database": "database",
+        "precisionV18FluxV20": "ms",
+        "retentionPolicyV18Flux": "",
+        "org": "IOT_SHACAM",
+        "bucket": "IOT_SHACAM_COMPONENTS",
+        "x": 1010,
+        "y": 580,
+        "wires": []
+    },
+    {
+        "id": "ee35dea322361818",
+        "type": "influxdb out",
+        "z": "f6f2187d.f17ca8",
+        "influxdb": "e8edfc4a1e971b41",
+        "name": "KITCHEN_COMPONENTS",
+        "measurement": "KITCHEN",
+        "precision": "",
+        "retentionPolicy": "",
+        "database": "database",
+        "precisionV18FluxV20": "ms",
+        "retentionPolicyV18Flux": "",
+        "org": "IOT_SHACAM",
+        "bucket": "IOT_SHACAM_COMPONENTS",
+        "x": 1000,
+        "y": 700,
+        "wires": []
+    },
+    {
+        "id": "130863c0ab08dc66",
+        "type": "influxdb out",
+        "z": "f6f2187d.f17ca8",
+        "influxdb": "e8edfc4a1e971b41",
+        "name": "OUTSIDE_COMPONENTS",
+        "measurement": "OUTSIDE",
+        "precision": "",
+        "retentionPolicy": "",
+        "database": "database",
+        "precisionV18FluxV20": "ms",
+        "retentionPolicyV18Flux": "",
+        "org": "IOT_SHACAM",
+        "bucket": "IOT_SHACAM_COMPONENTS",
+        "x": 1000,
+        "y": 820,
+        "wires": []
+    },
+    {
+        "id": "4b38b8595ea6d398",
+        "type": "function",
+        "z": "f6f2187d.f17ca8",
+        "name": "function outside",
+        "func": "// Odczytujemy dane z sensorów\nvar ts = msg.payload.temperature_sensor_ID41 !== undefined ? msg.payload.temperature_sensor_ID41 : flow.get('lastTs');  // Temperatura\nvar hs = msg.payload.humidity_sensor_ID40 !== undefined ? msg.payload.humidity_sensor_ID40 : flow.get('lastHs');  // Wilgotność\nvar os = msg.payload.motion_sensor_ID43 !== undefined ? msg.payload.motion_sensor_ID43 : flow.get('lastOs');  // Ruch\nvar aqs = msg.payload.air_quality_sensor_ID42 !== undefined ? msg.payload.air_quality_sensor_ID42 : flow.get('lastAqs');  // Jakość powietrza\nvar ls = msg.payload.light_sensor_ID39 !== undefined ? msg.payload.light_sensor_ID39 : flow.get('lastLs');  // Natężenie światła\n\n// Inicjalizacja urządzeń\nvar lightBulb13 = 0;\nvar camera1 = 0;\nvar lightBulb13 = 0;\n\n// Resetujemy payload, aby zawierał tylko aktywowane urządzenia\nmsg.payload = {};\n\n// Sprawdzenie ruchu i włączenie kamery\nif (os !== undefined) {  // Sprawdzamy, czy czujnik ruchu został dostarczony\n    if (os > 0) {\n        camera1 = 1;  // Jeśli wykryto ruch, włącz kamerę\n    }\n    msg.payload[\"Camera (ID: 1)\"] = camera1;\n    flow.set('lastOs', os);  // Zapisujemy ostatnią obecność\n}\n\n// Sprawdzenie ruchu i natężenia światła do włączenia żarówki\nif (os !== undefined || ls !== undefined) {  // Sprawdzamy, czy ruch i natężenie światła zostały dostarczone\n    if (os > 0 && ls < 800) {  // Jeśli wykryto ruch i natężenie światła jest mniejsze niż 800, włączamy światło\n        lightBulb13 = 1;\n    }\n    msg.payload[\"Light bulb (ID: 13)\"] = lightBulb13;\n    flow.set('lastOs', os);  // Zapisujemy ostatnią obecność\n    flow.set('lastLs', ls);  // Zapisujemy ostatnie natężenie światła\n}\n\n// Sprawdzamy, czy payload zawiera jakieś aktywowane urządzenia\nif (Object.keys(msg.payload).length > 0) {\n    // Jeśli payload nie jest pusty, wysyłamy msg\n    return msg;\n}\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 760,
+        "y": 820,
+        "wires": [
+            [
+                "130863c0ab08dc66"
+            ]
+        ]
+    },
+    {
+        "id": "db30582b629229b8",
+        "type": "function",
+        "z": "f6f2187d.f17ca8",
+        "name": "function alerts",
+        "func": "// Zmienna do przechowywania wartości czujników\nvar ts = msg.payload.temperature_sensor_ID41   // Temperatura (ID41)\nvar ms = msg.payload.motion_sensor_ID43  // Ruch (ID43)\nvar aqs = msg.payload.air_quality_sensor_ID42   // Wilgotność (ID40)\nvar cms = msg.payload.carbon_monoxide_sensor_ID8   // Tlenek węgla\n\n// Detektory dymu\nvar sd;\nfor (var key in msg.payload) {\n    if (key.startsWith(\"smoke_detector\")) {\n        sd = msg.payload[key]   // Detektor dymu\n    }\n}\n\n\n// Tworzymy nowy obiekt msg.payload z odpowiednimi danymi\nmsg.payload = {};\n\n// Warunki: \n// - Smoke detector > 0\n// - Carbon monoxide sensor > 0.5\n// - Temperature sensor < 0\nif (sd > 0) {\n    msg.payload.smoke_detector = sd;\n}\nif (cms > 0.5) {\n    msg.payload.carbon_monoxide_sensor_ID8 = cms;\n}\nif (ts < 0) {\n    msg.payload.temperature_sensor_ID41 = ts;\n}\n\n// Dodajemy pozostałe sensory, które zawsze mają być w payload\nif (ms !== undefined) {\n    msg.payload.motion_sensor_ID43 = ms;\n}\nif (aqs !== undefined) {\n    msg.payload.air_quality_sensor_ID42 = aqs;\n}\n\n\n// Sprawdzamy, czy payload zawiera jakiekolwiek wartości, aby nie wysyłać pustego\nif (Object.keys(msg.payload).length > 0) {\n    return msg;\n} else {\n    return null; // Jeśli nie ma żadnych danych, nie wysyłamy wiadomości\n}\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 740,
+        "y": 260,
+        "wires": [
+            [
+                "8f95761b134c8cc0"
+            ]
+        ]
+    }
+]
