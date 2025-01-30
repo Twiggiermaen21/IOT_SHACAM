@@ -1,8 +1,6 @@
 # SMART HOME AUTOMATED CONTROL AND MONITORING SYSTEM  
 
 ---
-sdadadasd docs file
----
 
 ## Project Setup  
 ### Steps to Run the Project  
