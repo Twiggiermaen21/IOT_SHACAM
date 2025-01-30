@@ -1,6 +1,5 @@
 # SMART HOME AUTOMATED CONTROL AND MONITORING SYSTEM  
 
----
 
 ## Project Setup  
 ### Steps to Run the Project  
